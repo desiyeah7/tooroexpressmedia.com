@@ -1,144 +1,155 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8>
-<meat name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My dashboard-live stream</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Owner Dashboard - Live Stream</title>
 <style>
-body {margin:0;font-family:Arial ,sans-serif;background:#1a1a1a;color:#fff;}
-  #loginBox {text-align:center; margin-top:50px;}
-   #ownerPanel {display:none;padding:20px;max-width:900px;margin:auto;}
-input, button {padding:10px;margin:5px;border-radius:5px;border:none;}
-button{cursor:pointer;background:#4caf50;color:#fff;}
-   .video-wrapper{position:relative;width:100%;aspect-ratio:16/9; background:black;overflow:hidden;border-radius:12px;
-margin-top:20px;}
-  .bg-media {position:absolute;width:100%;height:100%;
-object-fit:cover;z-index:1;display:none;}
-      #liveVideo{ position:absolute;bottom:15px;
-    right:15px;width:25px;border-radius:10px;
-      z-index:5px;border:2px solid #4caf50;
-background:black;}
-      #logoOverlay {position:absolute; top:10px;left:10px; width:70px; z-index:6;}
-
-    .title-bar{position:absolute;top:0;width:100%;
-background:rgba(0,0,0,0.65);overflow:hidden;z-index:12;
-height:35px;display:flex;align-items:center;}
-
-  #programTitle  {white-space:nowrap;padding-left:100%;animation:scrollTitle 15s linear infinite;color:#b7ffb7;
-font-weight:bold; font-size:16px;}
-
-       @keyframes scrollTilte {from
-{transform:transletX(0);} to 
-{transform:transletX(-100%); }}
-
-    #recodedVideos {margin-top:20px; dislay:grid;
-grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px;}
-
-      .video-card {background:rgba(0,0,0,0.6);padding:10px;
-    border-radius:10px;}
-
-
- </style>
+  body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; margin: 20px; }
+  #videoContainer { position: relative; }
+  #liveVideo { width: 640px; height: 360px; background-color: black; }
+  #programTitle { font-size: 24px; color: #ff6600; margin: 10px 0; white-space: nowrap; overflow: hidden; }
+  #chatContainer { margin-top: 20px; width: 640px; }
+  #messages { border: 1px solid #ccc; height: 150px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; background: #f9f9f9;}
+  #likesContainer { margin-top: 10px; font-size: 18px; }
+  #controls { margin-top: 10px; display: flex; gap: 10px; }
+  #controls input { padding: 5px; font-size: 16px; }
+  button { padding: 8px 15px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; background-color: #ff6600; color: white; }
+  button:hover { background-color: #ff4500; }
+</style>
 </head>
 <body>
-<!--Login-->
-<div id="loginBox">
-<h2>verify your identity</h2>
-<input type="email" id="email"Placeholder="Email" />
-<input type="password" id="password" placeholder="password"/>
-<button onclick="login()">Login</button>
-<buttton onclick="resetpassword()">ForgotpPassword?</button>
+
+<h1>Owner Dashboard - Live Stream</h1>
+
+<div id="programTitleContainer">
+  <div id="programTitle">Program Title</div>
 </div>
 
-<!--ownerPanel-->
-<div id="ownerPanel">
-<h1>Live Sreeam Owner Dashboard</h1>
-<button onclick="auth.SignOut()">LogOut</button>
-
-<!--Video Preview & Logo-->
-<div class="video-wrapper">
-<div class="tittle-bar">
-<div id="programTitle">Program Title</div></div>
-<img scr="IMG-20251213-WA0009.jpg" id="logoOverlay">
-<img id="bgImage" class="bg-media">
-<video id="bgVideo" class="bg-media"autoplay muted loop></video>
-<video id="LiveVideo"autoplay playsinline></video>
-</div>
- 
-
-<!--Program Title-->
-<div style="margin-top:10px;">
-<input id="titleinput" placeholder="Enter program title">
-<button onclick="setTitle()">Set Title</button>
+<div id="videoContainer">
+  <video id="liveVideo" autoplay></video>
 </div>
 
-<!--Background Media-->
-<div style="margin-top:10px;">
-<input type="file" accept="image/*.video/*" onchange="uploadBackground(this)">
-<button onclick="clearBackground()">Remove Background</button>
+<div id="controls">
+  <input type="text" id="titleInput" placeholder="Enter program title" />
+  <button id="setTitleBtn">Set Title</button>
+  <button id="startBtn">Start Stream</button>
+  <button id="stopBtn">Stop & Upload Recording</button>
 </div>
 
+<div id="likesContainer">Likes: <span id="likeCount">0</span></div>
 
-<!--Recorded Videos-->
-<h2>Last Events</h2>
-<input type="file" accept="video/*" onchange="uploadvideo(this)">
-<div id="recordedVideos"></div>
-
-<!--Change Password-->
-<div style="margin-top:20px;">
-<input type="password" id="newPassword" placeholder="New Password">
-<button onclick="changePassword()">Change Password</button>
-</div>
+<div id="chatContainer">
+  <h3>Viewer Chat</h3>
+  <div id="messages"></div>
 </div>
 
-<!--Firebase SDK-->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compact.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compact.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compact.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storagecompact.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
 <script>
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-<script>
-  <!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-<script>
-  // Firebase config (PASTE YOUR REAL VALUES HERE)
+  // ===== Initialize Firebase =====
   const firebaseConfig = {
-    apiKey: "PASTE_API_KEY_HERE",
-    authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-    projectId: "PASTE_PROJECT_ID",
-    messagingSenderId: "PASTE_SENDER_ID",
-    appId: "PASTE_APP_ID"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
   };
-
-  // Initialize Firebase (ONLY ONCE)
   firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const storage = firebase.storage();
 
-  // Login function
-  function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+  const video = document.getElementById('liveVideo');
+  let mediaStream;
+  let mediaRecorder;
+  let recordedChunks = [];
 
-    firebase.auth().signInWithEmailAndPassword(email, password)
-      .then(() => {
-        alert("Login successful");
-      })
-      .catch(error => {
-        alert(error.message);
-      });
-  }
-</script>
+  // ===== Start Stream =====
+  document.getElementById('startBtn').addEventListener('click', async () => {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    video.srcObject = mediaStream;
 
+    // Start recording
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(mediaStream);
+    mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.start();
+    alert("Live stream started and recording!");
+  });
+
+  // ===== Stop & Upload Recording =====
+  document.getElementById('stopBtn').addEventListener('click', async () => {
+    if(mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      mediaStream.getTracks().forEach(track => track.stop());
+
+      // Combine chunks and upload
+      const blob = new Blob(recordedChunks, { type: "video/webm" });
+      const title = document.getElementById('titleInput').value || "Untitled";
+      const filename = `recorded_${Date.now()}.webm`;
+      const storageRef = storage.ref().child(`recordedVideos/${filename}`);
+      await storageRef.put(blob);
+      const url = await storageRef.getDownloadURL();
+
+      // Save metadata to database
+      db.ref('recordedVideos').push({ title, url, timestamp: Date.now() });
+
+      alert("Recording uploaded successfully!");
+    }
+  });
+
+  // ===== Program Title =====
+  const titleInput = document.getElementById('titleInput');
+  const setTitleBtn = document.getElementById('setTitleBtn');
+  const programTitle = document.getElementById('programTitle');
+
+  setTitleBtn.addEventListener('click', () => {
+    const title = titleInput.value.trim();
+    if(title) db.ref('programTitle').set(title);
+  });
+
+  // ===== Display Scrolling Program Title =====
+  db.ref('programTitle').on('value', snapshot => {
+    const text = snapshot.val() || "No title set";
+    programTitle.textContent = text;
+    programTitle.style.animation = 'scroll 15s linear infinite';
+  });
+
+  // CSS scroll animation
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes scroll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    #programTitle { display: inline-block; white-space: nowrap; }
+  `;
+  document.head.appendChild(style);
+
+  // ===== Likes =====
+  const likeRef = db.ref('likes');
+  const likeCountElem = document.getElementById('likeCount');
+  likeRef.on('value', snapshot => { likeCountElem.innerText = snapshot.val() || 0; });
+
+  // ===== Viewer Chat =====
+  const messagesRef = db.ref('chatMessages');
+  const messages = document.getElementById('messages');
+  messagesRef.on('child_added', snapshot => {
+    const data = snapshot.val();
+    const div = document.createElement('div');
+    div.textContent = `${data.user}: ${data.text}`;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  });
 </script>
 </body>
-
 </html>
+
+
 
 
