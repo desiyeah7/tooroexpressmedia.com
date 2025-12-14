@@ -1,0 +1,172 @@
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Stream Viewer</title>
+<style>
+  body { margin:0; font-family: Arial,sans-serif; background:#111; color:#fff; }
+  .video-wrapper { position:relative; width:100%; max-width:900px; margin:auto; aspect-ratio:16/9; background:black; overflow:hidden; border-radius:12px; }
+  .bg-media { position:absolute; width:100%; height:100%; object-fit:cover; z-index:1; display:none; }
+  #liveVideo { position:absolute; bottom:15px; right:15px; width:25%; border-radius:10px; z-index:5; border:2px solid #4caf50; background:black; }
+  #logoOverlay { position:absolute; top:10px; left:10px; width:70px; z-index:6; }
+  .title-bar { position:absolute; top:0; width:100%; background:rgba(0,0,0,0.65); overflow:hidden; z-index:12; height:35px; display:flex; align-items:center; }
+  #programTitle { white-space:nowrap; padding-left:100%; animation:scrollTitle 15s linear infinite; color:#b7ffb7; font-weight:bold; font-size:16px; }
+  @keyframes scrollTitle { from { transform:translateX(0); } to { transform:translateX(-100%); } }
+  #chatBox { margin-top:20px; max-width:900px; margin:auto; }
+  #messages { background:rgba(0,0,0,0.6); padding:10px; border-radius:10px; height:200px; overflow-y:auto; }
+  #messageInput { width:70%; padding:10px; border-radius:5px; border:none; }
+  #sendBtn { padding:10px; border-radius:5px; border:none; background:#4caf50; color:#fff; cursor:pointer; }
+  #recordedVideos { margin-top:20px; display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; max-width:900px; margin:auto; }
+  .video-card { background: rgba(0,0,0,0.6); padding:10px; border-radius:10px; }
+  .likeBtn { margin-top:5px; padding:5px 10px; border:none; border-radius:5px; background:#ff5252; color:#fff; cursor:pointer; }
+  #subscribeBtn { margin:20px 0; padding:10px 20px; border:none; border-radius:5px; background:#4caf50; color:#fff; cursor:pointer; }
+  .shareBtn { margin:5px; padding:8px 12px; border:none; border-radius:5px; background:#3b5998; color:#fff; cursor:pointer; }
+#liveIndicator {position:fixed;
+top:10px;right:10px;
+border-radius:5px;
+padding:5px 10px;
+font-weight:bold;
+color:white;
+background-color:red;
+z-index:1000;}
+</style>
+</head>
+<body>
+
+<div class="video-wrapper">
+  <div class="title-bar"><div id="programTitle">Program Title</div></div>
+  <img src="IMG-20251213-WA0009.jpg" id="logoOverlay">
+  <img id="bgImage" class="bg-media">
+  <video id="bgVideo" class="bg-media" autoplay muted loop></video>
+  <video id="liveVideo" autoplay playsinline></video>
+</div>
+
+<!-- Subscribe & Share -->
+<div style="text-align:center;">
+  <button id="subscribeBtn">Subscribe</button>
+  <button class="shareBtn" onclick="share('whatsapp')">WhatsApp</button>
+  <button class="shareBtn" onclick="share('facebook')">Facebook</button>
+</div>
+
+<!-- Chat -->
+<div id="chatBox">
+  <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Type message...">
+  <button id="sendBtn">Send</button>
+</div>
+
+<!-- Recorded Videos -->
+<h2 style="text-align:center;">Recorded Videos</h2>
+<div id="recordedVideos"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script>
+//Import the functionsyou need from the SDKs you need
+
+import {initializedApp} from "firebase/app";
+//TODO:Add SDKs for Firebase products that you want to use
+//https://firebase.google.com/docs/web/setup#available-libraries
+
+//Your web app's Firebaseconfiguration
+const firebaseConfig = {
+apiKey:"AIzaSyDyIloGwy7UzZUAqodgZNvNCiBou02RbGQ",
+authDiomain: "livestream-trial.firebaseapp.com",
+projectId: "livestream-trial",
+storageBucket: "livestream-trial.firebasestorage.app",
+messagingSenderId: "448193920796",
+appId: "1:448193920796:web:019cf2b7295e0e7d7c04d9"
+};
+
+//Initialize Firebase
+const app = initializedApp(firebaseConfig);
+</script>
+<script>
+  // Firebase init
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "XXXX",
+    appId: "XXXX"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const storage = firebase.storage();
+
+  // Program title live
+  db.ref("programTitle").on("value",snap=>{
+    if(snap.exists()) document.getElementById("programTitle").textContent = snap.val();
+  }); 
+const db=firebase.database();
+const liveIndicator =
+document.getElementById('liveIndicator');
+
+db.ref('streamStatus/isLive').on('Value',(snapshot)=>
+{
+const isLive = snapshot.val();
+if (isLive) {
+liveIndicator.style.display = 'block';//show red LIVE
+}
+esle{ liveIndicator.style.display = 'none';//hide when offline
+}
+});
+// Background
+  db.ref("background").on("value", snap=>{
+    if(!snap.exists()) return;
+    const data=snap.val(); const img=document.getElementById("bgImage"); const vid=document.getElementById("bgVideo");
+    img.style.display="none"; vid.style.display="none";
+    if(data.type==="image"){ img.src=data.url; img.style.display="block"; } else { vid.src=data.url; vid.style.display="block"; }
+  });
+
+  // Chat
+  const messagesDiv=document.getElementById("messages");
+  const sendBtn=document.getElementById("sendBtn");
+  const messageInput=document.getElementById("messageInput");
+  sendBtn.onclick=function(){
+    const text=messageInput.value; if(!text) return;
+    db.ref("messages").push({text:text,time:Date.now()});
+    messageInput.value="";
+  };
+  db.ref("messages").on("child_added",snap=>{
+    const msg=snap.val(); const div=document.createElement("div");
+    div.textContent=msg.text; messagesDiv.appendChild(div); messagesDiv.scrollTop=messagesDiv.scrollHeight;
+  });
+
+  // Recorded videos with likes
+  const recordedDiv=document.getElementById("recordedVideos");
+  db.ref("recordedVideos").on("child_added",snap=>{
+    const data=snap.val(); const key=snap.key;
+    const card=document.createElement("div"); card.className="video-card";
+    const title=document.createElement("h4"); title.textContent=data.title; title.style.color="#a8f0a5";
+    const vid=document.createElement("video"); vid.src=data.url; vid.controls=true; vid.style.width="100%";
+    const likeBtn=document.createElement("button"); likeBtn.textContent="Like"; likeBtn.className="likeBtn";
+    likeBtn.onclick = ()=> {
+      const likesRef = db.ref(`recordedVideos/${key}/likes`);
+      likesRef.transaction(val => (val||0)+1);
+    };
+    card.appendChild(title); card.appendChild(vid); card.appendChild(likeBtn);
+    recordedDiv.appendChild(card);
+  });
+
+  // Subscribe button
+  document.getElementById("subscribeBtn").onclick = ()=> alert("Subscribed! You'll get notifications (simulate).");
+
+  // Share buttons
+  function share(platform){
+    const url = window.location.href;
+    let shareUrl="";
+    if(platform==="whatsapp") shareUrl=`https://api.whatsapp.com/send?text=Watch this live stream: ${url}`;
+    else if(platform==="facebook") shareUrl=`https://www.facebook.com/sharer/sharer.php?u=${url}`;
+    window.open(shareUrl,"_blank");
+  }
+</script>
+</body>
+</html>

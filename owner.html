@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8>
+<meat name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My dashboard-live stream</title>
+<style>
+body {margin:0;font-family:Arial ,sans-serif;background:#1a1a1a;color:#fff;}
+  #loginBox {text-align:center; margin-top:50px;}
+   #ownerPanel {display:none;padding:20px;max-width:900px;margin:auto;}
+input, button {padding:10px;margin:5px;border-radius:5px;border:none;}
+button{cursor:pointer;background:#4caf50;color:#fff;}
+   .video-wrapper{position:relative;width:100%;aspect-ratio:16/9; background:black;overflow:hidden;border-radius:12px;
+margin-top:20px;}
+  .bg-media {position:absolute;width:100%;height:100%;
+object-fit:cover;z-index:1;display:none;}
+      #liveVideo{ position:absolute;bottom:15px;
+    right:15px;width:25px;border-radius:10px;
+      z-index:5px;border:2px solid #4caf50;
+background:black;}
+      #logoOverlay {position:absolute; top:10px;left:10px; width:70px; z-index:6;}
+
+    .title-bar{position:absolute;top:0;width:100%;
+background:rgba(0,0,0,0.65);overflow:hidden;z-index:12;
+height:35px;display:flex;align-items:center;}
+
+  #programTitle  {white-space:nowrap;padding-left:100%;animation:scrollTitle 15s linear infinite;color:#b7ffb7;
+font-weight:bold; font-size:16px;}
+
+       @keyframes scrollTilte {from
+{transform:transletX(0);} to 
+{transform:transletX(-100%); }}
+
+    #recodedVideos {margin-top:20px; dislay:grid;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px;}
+
+      .video-card {background:rgba(0,0,0,0.6);padding:10px;
+    border-radius:10px;}
+
+
+ </style>
+</head>
+<body>
+<!--Login-->
+<div id="loginBox">
+<h2>verify your identity</h2>
+<input type="email" id="email"Placeholder="Email" />
+<input type="password" id="password" placeholder="password"/>
+<button onclick="login()">Login</button>
+<buttton onclick="resetpassword()">ForgotpPassword?</button>
+</div>
+
+<!--ownerPanel-->
+<div id="ownerPanel">
+<h1>Live Sreeam Owner Dashboard</h1>
+<button onclick="auth.SignOut()">LogOut</button>
+
+<!--Video Preview & Logo-->
+<div class="video-wrapper">
+<div class="tittle-bar">
+<div id="programTitle">Program Title</div></div>
+<img scr="IMG-20251213-WA0009.jpg" id="logoOverlay">
+<img id="bgImage" class="bg-media">
+<video id="bgVideo" class="bg-media"autoplay muted loop></video>
+<video id="LiveVideo"autoplay playsinline></video>
+</div>
+ 
+
+<!--Program Title-->
+<div style="margin-top:10px;">
+<input id="titleinput" placeholder="Enter program title">
+<button onclick="setTitle()">Set Title</button>
+</div>
+
+<!--Background Media-->
+<div style="margin-top:10px;">
+<input type="file" accept="image/*.video/*" onchange="uploadBackground(this)">
+<button onclick="clearBackground()">Remove Background</button>
+</div>
+
+
+<!--Recorded Videos-->
+<h2>Last Events</h2>
+<input type="file" accept="video/*" onchange="uploadvideo(this)">
+<div id="recordedVideos"></div>
+
+<!--Change Password-->
+<div style="margin-top:20px;">
+<input type="password" id="newPassword" placeholder="New Password">
+<button onclick="changePassword()">Change Password</button>
+</div>
+</div>
+
+<!--Firebase SDK-->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compact.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compact.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compact.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storagecompact.js"></script>
+
+<script>
+//Import the functionsyou need from the SDKs you need
+
+import {initializedApp} from "firebase/app";
+//TODO:Add SDKs for Firebase products that you want to use
+//https://firebase.google.com/docs/web/setup#available-libraries
+
+//Your web app's Firebaseconfiguration
+const firebaseConfig = {
+apiKey:"AIzaSyDyIloGwy7UzZUAqodgZNvNCiBou02RbGQ",
+authDiomain: "livestream-trial.firebaseapp.com",
+projectId: "livestream-trial",
+storageBucket: "livestream-trial.firebasestorage.app",
+messagingSenderId: "448193920796",
+appId: "1:448193920796:web:019cf2b7295e0e7d7c04d9"
+};
+
+//Initialize Firebase
+const app = initializedApp(firebaseConfig);
+</script>
+<script>
+
+//Initializing Firebase
+const firebaseConfig={
+apikey:"YOUR_API_KEY",
+authDomain:
+"YOUR_PROJECT.firebaseapp.com",
+databaseURL:
+"https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+projectId: "YOUR_PROJECT",
+storageBucket:
+"YOUR_PROJECT.appspot.com",
+messagingSenderId: "XXXX",
+appId: "XXXX"
+};
+
+firebase.initializedApp(firebaseConfig);
+const auth=firebase.auth()
+const db=firebase.database()p;
+const storage=firebase.storage();
+
+//Login
+function login(){
+const email=
+document.getElementById("email").value;
+const password=
+document.getElementById("password").value;
+
+
+auth.signInWithEmailAndPassword(email,password)
+.then(()=>{document.getElementById("loginBox").style.display="none";
+document.getElementById("ownerPanel").style.display="block";
+alert("Login Successful!);})
+   .catch(err=>alert(err.messsage));
+}
+
+//Password reset
+function resetPassword(){
+const email=
+document.getElementById("email").value;
+  if(!email)return alert("Enter your email first");
+auth.sendPasswordResetEmail(email)
+  .then(()=>alert("Password reset email sent!"))
+       .catch(err=>alert(err.message));
+}
+
+//Auth state change
+auth.onAuthStateChanged(user=>{
+if(user)
+{document.getElementById("loginBox").style.dispaly="none";
+document.getElementById("ownerPanel").style.dispaly="block";}
+
+else{document.getElementById("loginBox").style.dispaly="block";
+document.getElementById("ownerPanel").style.dispaly="none";}
+});
+
+//Change password
+function ChangePassword(){
+const user=auth.currentUser;
+const newPassword=
+document.getElementById("newPassword").value;
+
+if(newPassword) return
+alert("Enter a new password");
+
+user.updatePassword(newPassword)
+      .then(()=>alert ("Password changed successfully!"))
+    .catch(err=>alert(err.message));
+}
+
+//Program title
+function setTitle(){
+const  title="document.getElementById("titleInput").value;
+
+db.ref("programTitle").set(title);
+}
+
+
+//  background upload
+function upoloadBackground(input){
+const file=input.files[0]; if (!file) return;
+     const
+ref=storage.ref("background/current");
+
+ref.put(file).then(()=>ref.getDownloadURL().then(url=>db.ref("background").set({url:url,type:file.type.startsWith
+("video")?"video":"image"})
+));
+
+}
+function clearBackground(){ db.rel("background").remove();}
+
+
+//  upload recorded video
+function uploadVideo(input){
+const file=input.files[0]; if (!file) return;
+const videoId=Date.now();
+const
+ref=storage.ref(`recordedVideos/${videoId}`);
+
+ref.put(file).then(()=>ref.getDownloadURL().then(url=>{db.ref(`recordedVideos/${videoId}`)
+. set({title:file.name,url:url});
+}));
+}
+
+
+
+// Dispaly recorded videos & delete fully
+const
+recordedDiv=document.getElementById("recordedVideos");
+
+db.ref("recordedVideos").on(child_added", snap=>{
+  const data=snap.val();const
+key=snap.key;
+ const
+card=document.createElement("div");
+card.className="video-card";
+const
+title=document.createElement("h4");
+title.textContent=data.title;
+title.style.color="#a8f0a5";
+const
+vid=document.createElement("video");
+vid.src=data.url;
+vid.controls=true;
+vid.style.width="100%";
+const
+delBtn=document.createElement("button");
+delBtn.textContent="Delete";
+delBtn.onclick=()=>{
+storage.ref(`recordedVideos/${key}`)
+.delete().then(()=> db.ref(`recordedVideos/${key}`).remove())
+   .catch(err=>alert("Error deleting video: "+err.message));
+};
+card.appendChild(title);
+card.appendChild(vid);
+card.appendChild(delBtn);
+recordedDiv.appendChild(card);
+});
+</script>
+</body>
+</html>
